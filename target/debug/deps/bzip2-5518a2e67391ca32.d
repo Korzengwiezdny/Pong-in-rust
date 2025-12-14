@@ -1,0 +1,11 @@
+/Users/mariuszurban/Rust2/graggez/target/debug/deps/bzip2-5518a2e67391ca32.d: /Users/mariuszurban/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bzip2-0.4.4/src/lib.rs /Users/mariuszurban/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bzip2-0.4.4/src/mem.rs /Users/mariuszurban/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bzip2-0.4.4/src/bufread.rs /Users/mariuszurban/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bzip2-0.4.4/src/read.rs /Users/mariuszurban/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bzip2-0.4.4/src/write.rs
+
+/Users/mariuszurban/Rust2/graggez/target/debug/deps/libbzip2-5518a2e67391ca32.rlib: /Users/mariuszurban/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bzip2-0.4.4/src/lib.rs /Users/mariuszurban/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bzip2-0.4.4/src/mem.rs /Users/mariuszurban/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bzip2-0.4.4/src/bufread.rs /Users/mariuszurban/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bzip2-0.4.4/src/read.rs /Users/mariuszurban/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bzip2-0.4.4/src/write.rs
+
+/Users/mariuszurban/Rust2/graggez/target/debug/deps/libbzip2-5518a2e67391ca32.rmeta: /Users/mariuszurban/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bzip2-0.4.4/src/lib.rs /Users/mariuszurban/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bzip2-0.4.4/src/mem.rs /Users/mariuszurban/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bzip2-0.4.4/src/bufread.rs /Users/mariuszurban/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bzip2-0.4.4/src/read.rs /Users/mariuszurban/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bzip2-0.4.4/src/write.rs
+
+/Users/mariuszurban/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bzip2-0.4.4/src/lib.rs:
+/Users/mariuszurban/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bzip2-0.4.4/src/mem.rs:
+/Users/mariuszurban/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bzip2-0.4.4/src/bufread.rs:
+/Users/mariuszurban/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bzip2-0.4.4/src/read.rs:
+/Users/mariuszurban/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/bzip2-0.4.4/src/write.rs:
