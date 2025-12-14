@@ -1,3 +1,7 @@
+const SCREEN_W: f32 = 800.0;
+const SCREEN_H: f32 = 600.0;
+const PADDLE_W: f32 = 30.0;
+const PADDLE_H: f32 = 150.0;
 use ggez::event;
 use ggez::graphics::{self, Color};
 use ggez::{Context, ContextBuilder, GameResult};
@@ -36,7 +40,7 @@ impl GameState {
 impl event::EventHandler<ggez::GameError> for GameState {
     /// Logika gry – wywoływana co klatkę
     fn update(&mut self, ctx: &mut Context) -> GameResult {
-        // ---- PLAYER 1 (strzałki) ----
+      
         let mut dir1 = Vec2::ZERO;
 
         // if keyboard::is_key_pressed(ctx, KeyCode::Left) {
@@ -57,7 +61,7 @@ impl event::EventHandler<ggez::GameError> for GameState {
             self.player1_pos += dir1 * self.player_speed;
         }
 
-        // ---- PLAYER 2 (WASD) ----
+ 
         let mut dir2 = Vec2::ZERO;
 
         // if keyboard::is_key_pressed(ctx, KeyCode::A) {
@@ -79,28 +83,29 @@ impl event::EventHandler<ggez::GameError> for GameState {
         }
 
         // ograniczenie do rozmiaru okna 800x600 (dla obu graczy)
-        let half_size = 25.0;
-        self.player1_pos.x = self.player1_pos.x.clamp(0.0 + half_size, 800.0 - half_size);
-        self.player1_pos.y = self.player1_pos.y.clamp(0.0 + half_size, 600.0 - half_size);
-        self.player2_pos.x = self.player2_pos.x.clamp(0.0 + half_size, 800.0 - half_size);
-        self.player2_pos.y = self.player2_pos.y.clamp(0.0 + half_size, 600.0 - half_size);
+        // prostokaty przyklejone do ścian, ograniczenie tylko w pionie
+        self.player1_pos.x = 0.0 + (PADDLE_W * 0.5);
+        self.player2_pos.x = SCREEN_W - (PADDLE_W * 0.5);
+        let half_paddle_h = PADDLE_H * 0.5;
+        self.player1_pos.y = self.player1_pos.y.clamp(0.0 + half_paddle_h, SCREEN_H - half_paddle_h);
+        self.player2_pos.y = self.player2_pos.y.clamp(0.0 + half_paddle_h, SCREEN_H - half_paddle_h);
 
         //pilka
 
         self.ball_pos += self.ball_vel;
-        let w = 800.0;
-        let h = 600.0;
+        let w = SCREEN_W;
+        let h = SCREEN_H;
         let r = self.ball_radius;
 
-        if self.ball_pos.x - r <= 0.0 {
-            self.ball_pos.x = r;
-            self.ball_vel.x = -self.ball_vel.x;
-        }
+        // if self.ball_pos.x - r <= 0.0 {
+        //     self.ball_pos.x = r;
+        //     self.ball_vel.x = -self.ball_vel.x;
+        // }
 
-        if self.ball_pos.x + r >= w{
-            self.ball_pos.x = w - r;
-            self.ball_vel.x = -self.ball_vel.x;
-        }
+        // if self.ball_pos.x + r >= w{
+        //     self.ball_pos.x = w - r;
+        //     self.ball_vel.x = -self.ball_vel.x;
+        // }
 
 
         if self.ball_pos.y - r <= 0.0 {
@@ -111,8 +116,44 @@ impl event::EventHandler<ggez::GameError> for GameState {
         if self.ball_pos.y + r >= h{
             self.ball_pos.y = h - r;
             self.ball_vel.y = -self.ball_vel.y;
-
         }
+
+     
+        let half_pw = PADDLE_W * 0.5;
+        let half_ph = PADDLE_H * 0.5;
+
+    //kolizja piolki z prostokątem 
+        let mut collide_with_paddle = |paddle_pos: Vec2| {
+            let left = paddle_pos.x - half_pw;
+            let right = paddle_pos.x + half_pw;
+            let top = paddle_pos.y - half_ph;
+            let bottom = paddle_pos.y + half_ph;
+
+            let closest_x = self.ball_pos.x.clamp(left, right);
+            let closest_y = self.ball_pos.y.clamp(top, bottom);
+
+            let dx = self.ball_pos.x - closest_x;
+            let dy = self.ball_pos.y - closest_y;
+
+            if dx * dx + dy * dy <= r * r {
+                // odbicie w osi X (piłka odbija się od prostokata)
+                if self.ball_pos.x < paddle_pos.x {
+                    self.ball_vel.x = -self.ball_vel.x.abs();
+                    self.ball_pos.x = left - r; // wypchnij na lewo od prostokata
+                } else {
+                    self.ball_vel.x = self.ball_vel.x.abs();
+                    self.ball_pos.x = right + r; // wypchnij na prawo od prostokata
+                }
+
+              
+                // hit = -1 (góra prostokata) ... +1 (dół prostokata)
+                let hit = ((self.ball_pos.y - paddle_pos.y) / half_ph).clamp(-1.0, 1.0);
+                self.ball_vel.y += hit * 2.5;
+            }
+        };
+
+        collide_with_paddle(self.player1_pos);
+        collide_with_paddle(self.player2_pos);
 
 
         Ok(())
@@ -127,7 +168,7 @@ impl event::EventHandler<ggez::GameError> for GameState {
         );
 
         // prostokąt (kwadrat) o środku w (0,0) i rozmiarze 50x50
-        let rect = graphics::Rect::new(-25.0, -25.0, 30.0, 150.0);
+        let rect = graphics::Rect::new(-PADDLE_W * 0.5, -PADDLE_H * 0.5, PADDLE_W, PADDLE_H);
 
         let player1 = graphics::Mesh::new_rectangle(
             ctx,
