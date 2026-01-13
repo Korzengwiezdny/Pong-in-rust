@@ -15,6 +15,8 @@ struct GameState {
     ball_pos: Vec2,
     ball_vel: Vec2,
     ball_radius: f32,
+    score1: u32,
+    score2: u32,
 
     // szybkość poruszania
     player_speed: f32,
@@ -30,12 +32,18 @@ impl GameState {
             ball_pos: Vec2::new(400.0, 300.0),
             ball_vel: Vec2::new(4.0, 3.0),
             ball_radius: 12.0,
+            score1: 0,
+            score2: 0,
         
             player_speed: 5.0,
         })
     }
-}
 
+    fn reset_ball(&mut self, dir_x: f32){
+        self.ball_pos = Vec2::new(SCREEN_W * 0.5, SCREEN_H * 0.5);
+        self.ball_vel = Vec2::new(4.0 * dir_x, 3.0);
+}
+}
 
 impl event::EventHandler<ggez::GameError> for GameState {
     /// Logika gry – wywoływana co klatkę
@@ -122,6 +130,21 @@ impl event::EventHandler<ggez::GameError> for GameState {
         let half_pw = PADDLE_W * 0.5;
         let half_ph = PADDLE_H * 0.5;
 
+         // score
+         if self.ball_pos.x + r < 0.0 {
+            self.score1 +=1;
+            self.reset_ball(1.0);
+        }
+        
+        if self.ball_pos.x - r > w {
+            self.score2 += 1;
+            self.reset_ball(-1.0);
+        }
+        
+
+
+
+
     //kolizja piolki z prostokątem 
         let mut collide_with_paddle = |paddle_pos: Vec2| {
             let left = paddle_pos.x - half_pw;
@@ -152,6 +175,7 @@ impl event::EventHandler<ggez::GameError> for GameState {
             }
         };
 
+       
         collide_with_paddle(self.player1_pos);
         collide_with_paddle(self.player2_pos);
 
