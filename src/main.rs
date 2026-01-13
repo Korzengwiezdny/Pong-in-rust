@@ -12,7 +12,7 @@ use ggez::graphics::DrawParam;
 use ggez::conf::{WindowMode, WindowSetup};
 
 struct GameState {
-    // pozycja gracza (nasz kwadrat)
+    // pozycja gracza 
     player1_pos: Vec2,
     player2_pos: Vec2,
     ball_pos: Vec2,
@@ -31,11 +31,11 @@ struct GameState {
 impl GameState {
     fn new() -> GameResult<GameState> {
         Ok(GameState {
-            // Start: paletki przy ścianach, na środku ekranu w pionie
+            // Start
             player1_pos: Vec2::new(PADDLE_W * 0.5, SCREEN_H * 0.5),
             player2_pos: Vec2::new(SCREEN_W - (PADDLE_W * 0.5), SCREEN_H * 0.5),
 
-            // Start: piłka "przyklejona" do paletki serwującej (lewej) i czeka na SPACE
+            
             ball_pos: Vec2::new(PADDLE_W + 8.0 + SERVE_GAP, SCREEN_H * 0.5),
             ball_vel: Vec2::ZERO,
             ball_radius: 8.0, //rozmar pilki 
@@ -69,7 +69,7 @@ impl GameState {
 }
 
 impl event::EventHandler<ggez::GameError> for GameState {
-    /// Logika gry – wywoływana co klatkę
+    /// Logika gry wywoływana co klatkę
     fn update(&mut self, ctx: &mut Context) -> GameResult {
         if self.serving {
             if keyboard::is_key_pressed(ctx, KeyCode::Space) {
@@ -189,13 +189,13 @@ impl event::EventHandler<ggez::GameError> for GameState {
             let dy = self.ball_pos.y - closest_y;
 
             if dx * dx + dy * dy <= r * r {
-                // odbicie w osi X (piłka odbija się od prostokata)
+                // odbicie w osi X piłka odbija się
                 if self.ball_pos.x < paddle_pos.x {
                     self.ball_vel.x = -self.ball_vel.x.abs();
-                    self.ball_pos.x = left - r; // wypchnij na lewo od prostokata
+                    self.ball_pos.x = left - r; // odbij na lewo
                 } else {
                     self.ball_vel.x = self.ball_vel.x.abs();
-                    self.ball_pos.x = right + r; // wypchnij na prawo od prostokata
+                    self.ball_pos.x = right + r; // odbij na prawo
                 }
 
               
@@ -221,7 +221,7 @@ impl event::EventHandler<ggez::GameError> for GameState {
             Color::from([0.1, 0.2, 0.3, 1.0]), // ciemne tło
         );
 
-        // prostokąt (kwadrat) o środku w (0,0) i rozmiarze 50x50
+        // prostokąt  
         let rect = graphics::Rect::new(-PADDLE_W * 0.5, -PADDLE_H * 0.5, PADDLE_W, PADDLE_H);
 
         let player1 = graphics::Mesh::new_rectangle(
