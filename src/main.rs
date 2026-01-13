@@ -82,12 +82,6 @@ impl event::EventHandler<ggez::GameError> for GameState {
         }
         let mut dir1 = Vec2::ZERO;
 
-        // if keyboard::is_key_pressed(ctx, KeyCode::Left) {
-        //     dir1.x -= 1.0;
-        // }
-        // if keyboard::is_key_pressed(ctx, KeyCode::Right) {
-        //     dir1.x += 1.0;
-        // }
         if keyboard::is_key_pressed(ctx, KeyCode::W) {
             dir1.y -= 1.0;
         }
