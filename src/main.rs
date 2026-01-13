@@ -7,6 +7,7 @@ use ggez::graphics::{self, Color};
 use ggez::{Context, ContextBuilder, GameResult};
 use ggez::glam::Vec2;
 use ggez::input::keyboard::{self, KeyCode};
+use ggez::graphics::DrawParam;
 
 struct GameState {
     // pozycja gracza (nasz kwadrat)
@@ -17,6 +18,9 @@ struct GameState {
     ball_radius: f32,
     score1: u32,
     score2: u32,
+    serving: bool,
+    serve_from_left: bool,
+    serve_y: f32,
 
     // szybkość poruszania
     player_speed: f32,
@@ -29,26 +33,51 @@ impl GameState {
             // start na środku mniej więcej
             player1_pos: Vec2::new(25.0, 300.0),
             player2_pos: Vec2::new(775.0, 300.0),
-            ball_pos: Vec2::new(400.0, 300.0),
-            ball_vel: Vec2::new(4.0, 3.0),
+            ball_pos: Vec2::new(PADDLE_W + 12.0 + 10.0, SCREEN_H * 0.5),
+            ball_vel: Vec2::ZERO,
             ball_radius: 12.0,
             score1: 0,
             score2: 0,
-        
+            serving: true,
+            serve_from_left: true,
+            serve_y: SCREEN_H * 0.5,
             player_speed: 5.0,
         })
     }
 
-    fn reset_ball(&mut self, dir_x: f32){
-        self.ball_pos = Vec2::new(SCREEN_W * 0.5, SCREEN_H * 0.5);
-        self.ball_vel = Vec2::new(4.0 * dir_x, 3.0);
-}
+    fn prepare_serve(&mut self, from_left_paddle: bool, paddle_y: f32) {
+        let margin = 10.0;
+        self.serving = true;
+        self.serve_from_left = from_left_paddle;
+        self.serve_y = paddle_y;
+
+        // Ustaw piłkę przy paletce strony, która ma serwować
+        self.ball_pos = Vec2::new(
+            if from_left_paddle {
+                PADDLE_W + self.ball_radius + margin
+            } else {
+                SCREEN_W - (PADDLE_W + self.ball_radius + margin)
+            },
+            paddle_y.clamp(self.ball_radius, SCREEN_H - self.ball_radius),
+        );
+
+        // Zatrzymaj piłkę do czasu wciśnięcia SPACJI
+        self.ball_vel = Vec2::ZERO;
+    }
 }
 
 impl event::EventHandler<ggez::GameError> for GameState {
     /// Logika gry – wywoływana co klatkę
     fn update(&mut self, ctx: &mut Context) -> GameResult {
-      
+        if self.serving {
+            if keyboard::is_key_pressed(ctx, KeyCode::Space) {
+                self.serving = false;
+                self.ball_vel = Vec2::new(
+                    if self.serve_from_left { 4.0 } else { -4.0 },
+                    3.0,
+                );
+            }
+        }
         let mut dir1 = Vec2::ZERO;
 
         // if keyboard::is_key_pressed(ctx, KeyCode::Left) {
@@ -57,10 +86,10 @@ impl event::EventHandler<ggez::GameError> for GameState {
         // if keyboard::is_key_pressed(ctx, KeyCode::Right) {
         //     dir1.x += 1.0;
         // }
-        if keyboard::is_key_pressed(ctx, KeyCode::Up) {
+        if keyboard::is_key_pressed(ctx, KeyCode::W) {
             dir1.y -= 1.0;
         }
-        if keyboard::is_key_pressed(ctx, KeyCode::Down) {
+        if keyboard::is_key_pressed(ctx, KeyCode::S) {
             dir1.y += 1.0;
         }
 
@@ -78,10 +107,10 @@ impl event::EventHandler<ggez::GameError> for GameState {
         // if keyboard::is_key_pressed(ctx, KeyCode::D) {
         //     dir2.x += 1.0;
         // }
-        if keyboard::is_key_pressed(ctx, KeyCode::W) {
+        if keyboard::is_key_pressed(ctx, KeyCode::Up) {
             dir2.y -= 1.0;
         }
-        if keyboard::is_key_pressed(ctx, KeyCode::S) {
+        if keyboard::is_key_pressed(ctx, KeyCode::Down) {
             dir2.y += 1.0;
         }
 
@@ -100,7 +129,9 @@ impl event::EventHandler<ggez::GameError> for GameState {
 
         //pilka
 
-        self.ball_pos += self.ball_vel;
+        if !self.serving {
+            self.ball_pos += self.ball_vel;
+        }
         let w = SCREEN_W;
         let h = SCREEN_H;
         let r = self.ball_radius;
@@ -119,11 +150,15 @@ impl event::EventHandler<ggez::GameError> for GameState {
         if self.ball_pos.y - r <= 0.0 {
             self.ball_pos.y = r;
             self.ball_vel.y = -self.ball_vel.y;
+            //v2
+            //self.ball_vel.y = self.ball_vel.y.clamp(-8.0, 8.0);
         }
 
         if self.ball_pos.y + r >= h{
             self.ball_pos.y = h - r;
             self.ball_vel.y = -self.ball_vel.y;
+            //wersjav2
+            //self.ball_vel.y = self.ball_vel.y.clamp(-8.0, 8.0);
         }
 
      
@@ -133,12 +168,12 @@ impl event::EventHandler<ggez::GameError> for GameState {
          // score
          if self.ball_pos.x + r < 0.0 {
             self.score1 +=1;
-            self.reset_ball(1.0);
+            self.prepare_serve(true, self.player1_pos.y);
         }
         
         if self.ball_pos.x - r > w {
             self.score2 += 1;
-            self.reset_ball(-1.0);
+            self.prepare_serve(false, self.player2_pos.y);
         }
         
 
@@ -226,6 +261,29 @@ impl event::EventHandler<ggez::GameError> for GameState {
 
         //rysujemy pilke 
         canvas.draw(&ball, self.ball_pos);
+
+
+
+        let score_text = graphics::Text::new(
+            format!("{}    {}", self.score1,self.score2)
+        );
+    
+        canvas.draw(
+            &score_text,
+            graphics::DrawParam::default()
+            .dest(Vec2::new(SCREEN_W * 0.5, 20.0))
+            .offset(Vec2::new(0.5, 0.0)),
+        );
+
+        if self.serving {
+            let prompt = graphics::Text::new("Press SPACE to serve");
+            canvas.draw(
+                &prompt,
+                graphics::DrawParam::default()
+                    .dest(Vec2::new(SCREEN_W * 0.5, SCREEN_H * 0.5))
+                    .offset(Vec2::new(0.5, 0.5)),
+            );
+        }
 
         // wysyłamy ramkę na ekran
         canvas.finish(ctx)?;
