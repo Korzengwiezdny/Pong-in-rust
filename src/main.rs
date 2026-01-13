@@ -1,13 +1,15 @@
-const SCREEN_W: f32 = 800.0;
-const SCREEN_H: f32 = 600.0;
-const PADDLE_W: f32 = 30.0;
+const SCREEN_W: f32 = 1024.0;
+const SCREEN_H: f32 = 768.0;
+const PADDLE_W: f32 = 15.0;
 const PADDLE_H: f32 = 150.0;
+const SERVE_GAP: f32 = 2.0;
 use ggez::event;
 use ggez::graphics::{self, Color};
 use ggez::{Context, ContextBuilder, GameResult};
 use ggez::glam::Vec2;
 use ggez::input::keyboard::{self, KeyCode};
 use ggez::graphics::DrawParam;
+use ggez::conf::{WindowMode, WindowSetup};
 
 struct GameState {
     // pozycja gracza (nasz kwadrat)
@@ -20,7 +22,6 @@ struct GameState {
     score2: u32,
     serving: bool,
     serve_from_left: bool,
-    serve_y: f32,
 
     // szybkość poruszania
     player_speed: f32,
@@ -30,26 +31,27 @@ struct GameState {
 impl GameState {
     fn new() -> GameResult<GameState> {
         Ok(GameState {
-            // start na środku mniej więcej
-            player1_pos: Vec2::new(25.0, 300.0),
-            player2_pos: Vec2::new(775.0, 300.0),
-            ball_pos: Vec2::new(PADDLE_W + 12.0 + 10.0, SCREEN_H * 0.5),
+            // Start: paletki przy ścianach, na środku ekranu w pionie
+            player1_pos: Vec2::new(PADDLE_W * 0.5, SCREEN_H * 0.5),
+            player2_pos: Vec2::new(SCREEN_W - (PADDLE_W * 0.5), SCREEN_H * 0.5),
+
+            // Start: piłka "przyklejona" do paletki serwującej (lewej) i czeka na SPACE
+            ball_pos: Vec2::new(PADDLE_W + 8.0 + SERVE_GAP, SCREEN_H * 0.5),
             ball_vel: Vec2::ZERO,
-            ball_radius: 12.0,
+            ball_radius: 8.0, //rozmar pilki 
+            
             score1: 0,
             score2: 0,
             serving: true,
             serve_from_left: true,
-            serve_y: SCREEN_H * 0.5,
             player_speed: 5.0,
         })
     }
 
     fn prepare_serve(&mut self, from_left_paddle: bool, paddle_y: f32) {
-        let margin = 10.0;
+        let margin = SERVE_GAP;
         self.serving = true;
         self.serve_from_left = from_left_paddle;
-        self.serve_y = paddle_y;
 
         // Ustaw piłkę przy paletce strony, która ma serwować
         self.ball_pos = Vec2::new(
@@ -101,12 +103,7 @@ impl event::EventHandler<ggez::GameError> for GameState {
  
         let mut dir2 = Vec2::ZERO;
 
-        // if keyboard::is_key_pressed(ctx, KeyCode::A) {
-        //     dir2.x -= 1.0;
-        // }
-        // if keyboard::is_key_pressed(ctx, KeyCode::D) {
-        //     dir2.x += 1.0;
-        // }
+       
         if keyboard::is_key_pressed(ctx, KeyCode::Up) {
             dir2.y -= 1.0;
         }
@@ -119,13 +116,32 @@ impl event::EventHandler<ggez::GameError> for GameState {
             self.player2_pos += dir2 * self.player_speed;
         }
 
-        // ograniczenie do rozmiaru okna 800x600 (dla obu graczy)
+       
         // prostokaty przyklejone do ścian, ograniczenie tylko w pionie
         self.player1_pos.x = 0.0 + (PADDLE_W * 0.5);
         self.player2_pos.x = SCREEN_W - (PADDLE_W * 0.5);
         let half_paddle_h = PADDLE_H * 0.5;
         self.player1_pos.y = self.player1_pos.y.clamp(0.0 + half_paddle_h, SCREEN_H - half_paddle_h);
         self.player2_pos.y = self.player2_pos.y.clamp(0.0 + half_paddle_h, SCREEN_H - half_paddle_h);
+
+        // serwis
+        if self.serving {
+            let margin = SERVE_GAP;
+            let y = if self.serve_from_left {
+                self.player1_pos.y
+            } else {
+                self.player2_pos.y
+            };
+
+            self.ball_pos = Vec2::new(
+                if self.serve_from_left {
+                    PADDLE_W + self.ball_radius + margin
+                } else {
+                    SCREEN_W - (PADDLE_W + self.ball_radius + margin)
+                },
+                y.clamp(self.ball_radius, SCREEN_H - self.ball_radius),
+            );
+        }
 
         //pilka
 
@@ -135,17 +151,6 @@ impl event::EventHandler<ggez::GameError> for GameState {
         let w = SCREEN_W;
         let h = SCREEN_H;
         let r = self.ball_radius;
-
-        // if self.ball_pos.x - r <= 0.0 {
-        //     self.ball_pos.x = r;
-        //     self.ball_vel.x = -self.ball_vel.x;
-        // }
-
-        // if self.ball_pos.x + r >= w{
-        //     self.ball_pos.x = w - r;
-        //     self.ball_vel.x = -self.ball_vel.x;
-        // }
-
 
         if self.ball_pos.y - r <= 0.0 {
             self.ball_pos.y = r;
@@ -176,10 +181,6 @@ impl event::EventHandler<ggez::GameError> for GameState {
             self.prepare_serve(false, self.player2_pos.y);
         }
         
-
-
-
-
     //kolizja piolki z prostokątem 
         let mut collide_with_paddle = |paddle_pos: Vec2| {
             let left = paddle_pos.x - half_pw;
@@ -293,7 +294,13 @@ impl event::EventHandler<ggez::GameError> for GameState {
 
 pub fn main() -> GameResult {
     // Tworzymy kontekst i pętlę zdarzeń
-    let cb = ContextBuilder::new("pong", "gracz");
+    let cb = ContextBuilder::new("pong", "gracz")
+        .window_setup(WindowSetup::default().title("An easy, good game"))
+        .window_mode(
+            WindowMode::default()
+                .dimensions(SCREEN_W, SCREEN_H)
+                .resizable(false),
+        );
     let (ctx, event_loop) = cb.build()?;
 
     // Tworzymy stan gry
