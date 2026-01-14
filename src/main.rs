@@ -1,8 +1,12 @@
-const SCREEN_W: f32 = 1024.0;
-const SCREEN_H: f32 = 768.0;
+const SCREEN_W: f32 = 1650.0;
+const SCREEN_H: f32 = 900.0;
 const PADDLE_W: f32 = 15.0;
 const PADDLE_H: f32 = 150.0;
 const SERVE_GAP: f32 = 2.0;
+const AI_ENABLED: bool = true;   // włącz / wyłącz AI
+const AI_DEADZONE: f32 = 8.0;    // tolerancja w px 
+const AI_SPEED: f32 = 4.5;       // prędkość paletki AI
+const BALL_SPEEDUP: f32 = 1.05; // szybciej po odbiciu
 use ggez::event;
 use ggez::graphics::{self, Color};
 use ggez::{Context, ContextBuilder, GameResult};
@@ -75,7 +79,7 @@ impl event::EventHandler<ggez::GameError> for GameState {
             if keyboard::is_key_pressed(ctx, KeyCode::Space) {
                 self.serving = false;
                 self.ball_vel = Vec2::new(
-                    if self.serve_from_left { 4.0 } else { -4.0 },
+                    if self.serve_from_left { 5.0 } else { -5.0 },
                     3.0,
                 );
             }
@@ -95,19 +99,40 @@ impl event::EventHandler<ggez::GameError> for GameState {
         }
 
  
-        let mut dir2 = Vec2::ZERO;
-
-       
-        if keyboard::is_key_pressed(ctx, KeyCode::Up) {
-            dir2.y -= 1.0;
-        }
-        if keyboard::is_key_pressed(ctx, KeyCode::Down) {
-            dir2.y += 1.0;
-        }
-
-        if dir2.length_squared() > 0.0 {
-            dir2 = dir2.normalize();
-            self.player2_pos += dir2 * self.player_speed;
+        if AI_ENABLED {
+            // Cel: y piłki (możesz też celować w "przewidywane" y, ale na start nie trzeba)
+            let target_y = self.ball_pos.y;
+        
+            let diff = target_y - self.player2_pos.y;
+        
+            // Opcjonalnie: AI rusza się mocniej, gdy piłka leci do niego (ball_vel.x > 0)
+            let should_track = !self.serving && self.ball_vel.x > 0.0;
+        
+            if should_track || self.serving {
+                if diff > AI_DEADZONE {
+                    self.player2_pos.y += AI_SPEED;
+                } else if diff < -AI_DEADZONE {
+                    self.player2_pos.y -= AI_SPEED;
+                }
+            } else {
+                // gdy piłka leci w drugą stronę, AI wraca do środka (opcjonalnie)
+                let center = SCREEN_H * 0.5;
+                let diff_center = center - self.player2_pos.y;
+                if diff_center > AI_DEADZONE {
+                    self.player2_pos.y += AI_SPEED * 0.6;
+                } else if diff_center < -AI_DEADZONE {
+                    self.player2_pos.y -= AI_SPEED * 0.6;
+                }
+            }
+        } else {
+            // sterowanie ręczne 
+            let mut dir2 = Vec2::ZERO;
+            if keyboard::is_key_pressed(ctx, KeyCode::Up) { dir2.y -= 1.0; }
+            if keyboard::is_key_pressed(ctx, KeyCode::Down) { dir2.y += 1.0; }
+            if dir2.length_squared() > 0.0 {
+                dir2 = dir2.normalize();
+                self.player2_pos += dir2 * self.player_speed;
+            }
         }
 
        
@@ -166,12 +191,12 @@ impl event::EventHandler<ggez::GameError> for GameState {
 
          // score
          if self.ball_pos.x + r < 0.0 {
-            self.score1 +=1;
+            self.score2 +=1;
             self.prepare_serve(true, self.player1_pos.y);
         }
         
         if self.ball_pos.x - r > w {
-            self.score2 += 1;
+            self.score1 += 1;
             self.prepare_serve(false, self.player2_pos.y);
         }
         
@@ -197,6 +222,7 @@ impl event::EventHandler<ggez::GameError> for GameState {
                     self.ball_vel.x = self.ball_vel.x.abs();
                     self.ball_pos.x = right + r; // odbij na prawo
                 }
+                self.ball_vel *= BALL_SPEEDUP;
 
               
                 // hit = -1 (góra prostokata) ... +1 (dół prostokata)
